@@ -7,6 +7,7 @@ requires-python = ">=3.13"
 dependencies = [
     "crewai>=1.10.1",
     "crewai-tools>=1.10.1",
+    "logfire>=4.6.0",
     "opencv-python>=4.13.0.92",
     "pydantic-settings>=2.10.1",
     "pysimverse>=0.14",

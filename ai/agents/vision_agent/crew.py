@@ -17,11 +17,12 @@ class ObstaclesSchema(BaseModel):
 
 
 class VisionToolSchema(BaseModel):
-    objects:                 list[str] = Field(default_factory=list, description='describe what do you see in camera')
-    hazards:                 list[str] = Field(default_factory=list, description='describe what do hazards are found')
-    is_safe_to_land:         bool      = Field(...,                  description='in this state, is the drone safe?')
+    objects:                 list[str]             = Field(default_factory=list, description='describe what do you see in camera')
+    hazards:                 list[str]             = Field(default_factory=list, description='describe what do hazards are found')
+    is_safe_to_land:         bool                  = Field(...,                  description='in this state, is the drone safe?')
     distance_from_obstacles: list[ObstaclesSchema] = Field(..., description='distance from and to the obstacles')
-    move_to: Movements = Field(default=None, description='move if necessary')
+    move_to:                 Movements             = Field(default=None, description='move if necessary')
+    target_found:            bool                  = Field(..., description='target a blue circle')
 
 
 @CrewBase
