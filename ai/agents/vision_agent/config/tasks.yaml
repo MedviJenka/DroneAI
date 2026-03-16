@@ -21,20 +21,39 @@ vision_task:
 pilot_task:
   description: |
     Read the visual analysis from the vision agent and decide the drone's next action.
+    The camera starts forward-facing (0°). Negative camera_angle tilts it toward the ground (-90° = straight down).
 
-    Movement rules (apply in order):
-    1. Target NOT visible → use ROTATE to scan. After several rotations with no target, try FORWARD to explore.
-    2. Target visible, NOT centered → move to center it:
-       - Too far left  → RIGHT
-       - Too far right → LEFT
-       - Too far up in frame (target is ahead) → FORWARD
-       - Too far down in frame (target is behind) → BACKWARD
-    3. Target visible, roughly centered, drone is far/high → DOWN to descend closer.
-    4. Target centered and drone is directly above it at close range → set is_safe_to_land=True.
+    Phase 1 — SEARCH (target not visible, camera forward):
+      move_to=ROTATE, camera_angle=0, is_safe_to_land=False
 
-    Note: the drone only moves on the X/Y plane and can rotate (yaw). Use ROTATE to change
-    the heading when the target is not visible rather than moving blindly.
+    Phase 2 — APPROACH (target visible in forward/angled camera):
+      The target is in front of the drone, not below it yet.
+      - Tilt camera down: camera_angle=-30
+      - Move toward it: move_to=FORWARD
+      - Adjust lateral: if target is left→ LEFT, right→ RIGHT
+      - is_safe_to_land=False
+
+    Phase 3 — POSITION OVERHEAD (camera tilted ~-30° to -60°, target visible):
+      Keep adjusting to center the target in the frame.
+      - Continue tilting camera down: camera_angle=-30
+      - Fine lateral corrections: LEFT / RIGHT / FORWARD / BACKWARD
+      - is_safe_to_land=False
+
+    Phase 4 — CONFIRM OVERHEAD (camera pointing straight down ~-90°, target centered):
+      The drone is directly above the target.
+      - move_to=DOWN to descend closer
+      - camera_angle=0 (already at max tilt, no further adjustment)
+      - is_safe_to_land=False
+
+    Phase 5 — LAND (camera down, target centered AND large in frame, drone close):
+      - move_to=None, camera_angle=0, is_safe_to_land=True
+
+    Never set is_safe_to_land=True unless the camera is pointing downward
+    and the target is both centered and fills most of the frame.
   expected_output: >
-    A structured navigation decision: move_to direction, is_safe_to_land flag,
-    target_found flag, detected objects, hazards, and obstacle distances.
+    A fully populated structured navigation decision including:
+    scene_summary (one sentence), flight_phase, objects list, hazards list,
+    obstacle distances, target_found, target_position, target_size,
+    move_to direction, camera_angle adjustment, and is_safe_to_land flag.
   agent: pilot_agent
+  context: [vision_task]

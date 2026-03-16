@@ -1,3 +1,9 @@
+manager_agent:
+  role: manager agent orchestrating the moves
+  goal: smart pilot
+  backstory: ...
+  allow_delegation: true
+
 vision_agent:
   role: Drone Vision Analyst
   goal: >
@@ -6,6 +12,8 @@ vision_agent:
   backstory: >
     A specialized computer vision system trained to compare live drone footage
     against a target image and report exactly what is visible and where.
+  allow_delegation: true
+  memory: true
 
 pilot_agent:
   role: Autonomous Drone Pilot
@@ -16,3 +24,4 @@ pilot_agent:
     An expert autonomous pilot that reads visual reports and decides the
     optimal next movement — including rotation to scan for unseen targets —
     to safely navigate toward and land on the designated pad.
+  allow_delegation: true

@@ -1,6 +1,9 @@
+from typing import Callable
+
 import cv2
 from time import sleep
 from pathlib import Path
+from pydantic import BaseModel
 from pysimverse import Drone
 from ai.agents.vision_agent.crew import vision_agent
 from log import Log
@@ -9,19 +12,47 @@ from log import Log
 log = Log(name='main-drone')
 
 SAVE_PATH = Path("drone_capture.png")
+
 TARGET_PATH = Path("target.png")
 
-MOVE_DISTANCE = 50
+MOVE_DISTANCE = 100
 
-MOVE_ACTIONS = {
-    "FORWARD": lambda d: d.move_forward(MOVE_DISTANCE),
-    "BACKWARD": lambda d: d.move_backward(MOVE_DISTANCE),
-    "RIGHT": lambda d: d.move_right(MOVE_DISTANCE),
-    "LEFT": lambda d: d.move_left(MOVE_DISTANCE),
-    "UP": lambda d: d.move_up(MOVE_DISTANCE),
-    "DOWN": lambda d: d.move_down(MOVE_DISTANCE),
-    "ROTATE": lambda d: d.rotate(angle=MOVE_DISTANCE),
-}
+
+class MoveActions(BaseModel):
+    forward:  int = MOVE_DISTANCE
+    backward: int = MOVE_DISTANCE
+    left:     int = MOVE_DISTANCE
+    right:    int = MOVE_DISTANCE
+    up:       int = MOVE_DISTANCE
+    down:     int = MOVE_DISTANCE
+    rotate:   int = MOVE_DISTANCE
+
+    def action_map(self) -> dict[str, Callable[[Drone], None]]:
+        return {
+            "FORWARD": lambda d: d.move_forward(self.forward),
+            "BACKWARD": lambda d: d.move_backward(self.backward),
+            "LEFT": lambda d: d.move_left(self.left),
+            "RIGHT": lambda d: d.move_right(self.right),
+            "UP": lambda d: d.move_up(self.up),
+            "DOWN": lambda d: d.move_down(self.down),
+            "ROTATE": lambda d: d.rotate(angle=self.rotate),
+        }
+
+
+actions = MoveActions()
+
+
+def execute_movement(drone: Drone, move_to: str | None):
+    if not move_to:
+        return
+
+    action = actions.action_map().get(move_to.upper())
+
+    if action:
+        log.fire.info(f"Moving: {move_to}")
+        action(drone)
+    else:
+        log.fire.error(f"Unknown direction: {move_to}")
 
 
 def capture_frame(drone: Drone):
@@ -34,27 +65,19 @@ def capture_frame(drone: Drone):
 
 
 def analyze_environment():
-    return vision_agent(
-        image_path=str(SAVE_PATH),
-        target_image_path=str(TARGET_PATH),
-    )
+    return vision_agent(image_path=str(SAVE_PATH), target_image_path=str(TARGET_PATH))
 
 
-def execute_movement(drone: Drone, move_to: str | None):
-    if not move_to:
-        return
-    action = MOVE_ACTIONS.get(move_to.upper())
-    if action:
-        log.fire.info(f"Moving: {move_to}")
-        action(drone)
-    else:
-        log.fire.error(f"Unknown direction: {move_to}")
+def execute_camera(drone: Drone, camera_angle: int = 45):
+    if camera_angle != 0:
+        log.fire.info(f"Camera tilt: {camera_angle}°")
+        drone.rotate_camera(camera_angle)
 
 
-def drone_loop():
+def drone_loop(initial_altitude: int = 100):
     drone = Drone()
     drone.connect()
-    drone.take_off(takeoff_height=100)
+    drone.take_off(takeoff_height=initial_altitude)
     drone.streamon()
 
     try:
@@ -66,19 +89,20 @@ def drone_loop():
 
             analysis = analyze_environment()
 
+            log.fire.info(f"Scene: {analysis.get('scene_summary')}")
+            log.fire.info(f"Phase: {analysis.get('flight_phase')}")
+            log.fire.info(f"Target found: {analysis.get('target_found')} | position: {analysis.get('target_position')} | size: {analysis.get('target_size')}")
             log.fire.info(f"Objects: {analysis['objects']}")
             log.fire.info(f"Hazards: {analysis['hazards']}")
-            log.fire.info(f"Safe to land: {analysis['is_safe_to_land']}")
-            log.fire.info(f"Suggested move: {analysis.get('move_to')}")
-            log.fire.info(f'is target found? {analysis.get('target_found')}')
+            log.fire.info(f"Move: {analysis.get('move_to')} | camera: {analysis.get('camera_angle', 0)}° | safe to land: {analysis['is_safe_to_land']}")
 
-            if analysis.get('target_found'):
-                if analysis["is_safe_to_land"]:
-                    log.fire.info("Safe landing spot found — landing.")
-                    drone.land()
-                    break
-
+            execute_camera(drone, analysis.get("camera_angle", 0))
             execute_movement(drone, analysis.get("move_to"))
+
+            if analysis["is_safe_to_land"]:
+                log.fire.info("Directly above target — landing.")
+                drone.land()
+                break
             sleep(2)
 
     finally:

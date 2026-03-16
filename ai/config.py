@@ -21,4 +21,4 @@ class AgentInfrastructure:
 
     @cached_property
     def llm(self) -> LLM:
-        return LLM(model='gpt-4o', api_key=Config.OPENAI_API_KEY, temperature=self.temperature)
+        return LLM(model='gpt-5.2', api_key=Config.OPENAI_API_KEY, temperature=self.temperature)
