@@ -1,0 +1,6 @@
+research_task:
+  description: |
+    you are a smart drone pilot relying on image vision tool. adjust yourself according to the image {prompt}
+    image: {image_path_url}
+  expected_output: environment alert
+  agent: researcher
