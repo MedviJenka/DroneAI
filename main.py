@@ -17,10 +17,7 @@ def capture_frame(drone: Drone):
 
 
 def analyze_environment():
-    result = vision_agent(
-        prompt="Analyze the landing area. Identify objects and hazards.",
-        image_path=str(SAVE_PATH)
-    )
+    result = vision_agent(prompt="Analyze the landing area. Identify objects and hazards.", image_path=str(SAVE_PATH))
     return result
 
 

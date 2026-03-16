@@ -1,36 +1,27 @@
+from typing import Literal
+
 from crewai import Crew, LLM
 from crewai.project import CrewBase, agent, crew, task
 from crewai_tools import VisionTool
 from pydantic import BaseModel, Field
 from crewai import Agent, Task
-from functools import cached_property
-from settings import Config
+from ai.config import AgentInfrastructure
 
 
-class AgentInfrastructure:
-    def __init__(self,
-                 agents: list[Agent] = None,
-                 tasks: list[Task] = None,
-                 agents_config: dict = "config/agents.yaml",
-                 tasks_config: dict = "config/tasks.yaml",
-                 temperature: float = 0.0,
-                 ) -> None:
+type Movements = Literal['RIGHT', 'LEFT', 'UP', 'DOWN', 'FORWARD', 'BACKWARD']
 
-        self.agents: list[Agent] = agents
-        self.tasks: list[Task] = tasks
-        self.agents_config: dict = agents_config
-        self.tasks_config: dict = tasks_config
-        self.temperature: float = temperature
 
-    @cached_property
-    def llm(self) -> LLM:
-        return LLM(model='gpt-4o', api_key=Config.OPENAI_API_KEY, temperature=self.temperature)
+class ObstaclesSchema(BaseModel):
+    obstacle_name: str
+    distance_to_obstacle: float
 
 
 class VisionToolSchema(BaseModel):
-    objects:         list[str] = Field(default_factory=list, description='describe what do you see in camera')
-    hazards:         list[str] = Field(default_factory=list, description='describe what do hazards are found')
-    is_safe_to_land: bool      = Field(...,                  description='in this state, is the drone safe?')
+    objects:                 list[str] = Field(default_factory=list, description='describe what do you see in camera')
+    hazards:                 list[str] = Field(default_factory=list, description='describe what do hazards are found')
+    is_safe_to_land:         bool      = Field(...,                  description='in this state, is the drone safe?')
+    distance_from_obstacles: list[ObstaclesSchema] = Field(..., description='distance from and to the obstacles')
+    move_to: Movements = Field(default=None, description='move if necessary')
 
 
 @CrewBase
