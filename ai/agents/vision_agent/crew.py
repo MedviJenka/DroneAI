@@ -1,14 +1,14 @@
 from typing import Literal
 
-from crewai import Crew, LLM
+from crewai import Crew
 from crewai.project import CrewBase, agent, crew, task
-from crewai_tools import VisionTool
 from pydantic import BaseModel, Field
 from crewai import Agent, Task
 from ai.config import AgentInfrastructure
+from ai.agents.vision_agent.tools.custom_tool import TargetFinderTool
 
 
-type Movements = Literal['RIGHT', 'LEFT', 'UP', 'DOWN', 'FORWARD', 'BACKWARD']
+type Movements = Literal['RIGHT', 'LEFT', 'UP', 'DOWN', 'FORWARD', 'BACKWARD', 'ROTATE']
 
 
 class ObstaclesSchema(BaseModel):
@@ -29,21 +29,35 @@ class VisionToolSchema(BaseModel):
 class VisionAgent(AgentInfrastructure):
 
     @agent
-    def researcher(self) -> Agent:
-        return Agent(config=self.agents_config['researcher'], tools=[VisionTool()], llm=self.llm, verbose=True)
+    def vision_agent(self) -> Agent:
+        return Agent(config=self.agents_config['vision_agent'], tools=[TargetFinderTool()], llm=self.llm, verbose=True)
+
+    @agent
+    def pilot_agent(self) -> Agent:
+        return Agent(config=self.agents_config['pilot_agent'], tools=[], llm=self.llm, verbose=True)
 
     @task
-    def research_task(self, **kwargs: str) -> Task:
-        return Task(config=self.tasks_config['research_task'], output_pydantic=VisionToolSchema, **kwargs)
+    def vision_task(self, **kwargs: str) -> Task:
+        return Task(config=self.tasks_config['vision_task'], **kwargs)
+
+    @task
+    def pilot_task(self, **kwargs: str) -> Task:
+        return Task(config=self.tasks_config['pilot_task'], output_pydantic=VisionToolSchema, **kwargs)
 
     @crew
     def crew(self) -> Crew:
         return Crew(agents=self.agents, tasks=self.tasks, verbose=True)
 
 
-def vision_agent(prompt: str, image_path: str) -> dict:
-    return VisionAgent().crew().kickoff(inputs={'prompt': prompt, 'image_path_url': image_path}).pydantic.model_dump()
+def vision_agent(image_path: str, target_image_path: str) -> dict:
+    return VisionAgent().crew().kickoff(inputs={
+        'image_path_url': image_path,
+        'target_image_path': target_image_path,
+    }).pydantic.model_dump()
 
 
 if __name__ == '__main__':
-    print(vision_agent(prompt='hi', image_path=r'C:\Users\medvi\PycharmProjects\PythonProject\drone_capture.png'))
+    print(vision_agent(
+        image_path=r'C:\Users\medvi\PycharmProjects\PythonProject\drone_capture.png',
+        target_image_path=r'C:\Users\medvi\PycharmProjects\PythonProject\target.png',
+    ))

@@ -9,6 +9,7 @@ from log import Log
 log = Log(name='main-drone')
 
 SAVE_PATH = Path("drone_capture.png")
+TARGET_PATH = Path("target.png")
 
 MOVE_DISTANCE = 50
 
@@ -33,16 +34,10 @@ def capture_frame(drone: Drone):
 
 
 def analyze_environment():
-    result = vision_agent(
-        prompt=(
-            "Analyze the drone camera feed. Identify all objects and hazards. "
-            "Decide whether it is safe to land. If not safe, suggest the best "
-            "direction to move (FORWARD/BACKWARD/LEFT/RIGHT/UP/DOWN/ROTATE) to avoid hazards."
-            "find the target and land on it"
-        ),
+    return vision_agent(
         image_path=str(SAVE_PATH),
+        target_image_path=str(TARGET_PATH),
     )
-    return result
 
 
 def execute_movement(drone: Drone, move_to: str | None):

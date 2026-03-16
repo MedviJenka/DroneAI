@@ -1,6 +1,40 @@
-research_task:
+vision_task:
   description: |
-    you are a smart drone pilot relying on image vision tool. adjust yourself according to the image {prompt}
-    image: {image_path_url}
-  expected_output: environment alert
-  agent: researcher
+    Use the Target Finder Tool to analyze the current camera feed and locate the landing target.
+
+    Call the tool with:
+      - drone_image_path: {image_path_url}
+      - target_image_path: {target_image_path}
+
+    Report:
+    - All visible objects and hazards
+    - Whether the target landing pad is visible (yes/no)
+    - If visible: its position in the frame (center / left / right / top / bottom / top-left / top-right / bottom-left / bottom-right)
+    - If visible: whether the drone is directly above it, close, or far
+    - Estimated distances to any obstacles
+  expected_output: >
+    A detailed visual analysis: target visibility and position, object list,
+    hazard list, and obstacle distances.
+  agent: vision_agent
+
+
+pilot_task:
+  description: |
+    Read the visual analysis from the vision agent and decide the drone's next action.
+
+    Movement rules (apply in order):
+    1. Target NOT visible → use ROTATE to scan. After several rotations with no target, try FORWARD to explore.
+    2. Target visible, NOT centered → move to center it:
+       - Too far left  → RIGHT
+       - Too far right → LEFT
+       - Too far up in frame (target is ahead) → FORWARD
+       - Too far down in frame (target is behind) → BACKWARD
+    3. Target visible, roughly centered, drone is far/high → DOWN to descend closer.
+    4. Target centered and drone is directly above it at close range → set is_safe_to_land=True.
+
+    Note: the drone only moves on the X/Y plane and can rotate (yaw). Use ROTATE to change
+    the heading when the target is not visible rather than moving blindly.
+  expected_output: >
+    A structured navigation decision: move_to direction, is_safe_to_land flag,
+    target_found flag, detected objects, hazards, and obstacle distances.
+  agent: pilot_agent
