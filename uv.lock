@@ -126,6 +126,25 @@ wheels = [
 ]
 
 [[package]]
+name = "anthropic"
+version = "0.73.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio" },
+    { name = "distro" },
+    { name = "docstring-parser" },
+    { name = "httpx" },
+    { name = "jiter" },
+    { name = "pydantic" },
+    { name = "sniffio" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/f0/07/f550112c3f5299d02f06580577f602e8a112b1988ad7c98ac1a8f7292d7e/anthropic-0.73.0.tar.gz", hash = "sha256:30f0d7d86390165f86af6ca7c3041f8720bb2e1b0e12a44525c8edfdbd2c5239", size = 425168, upload-time = "2025-11-14T18:47:52.635Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/15/b1/5d4d3f649e151e58dc938cf19c4d0cd19fca9a986879f30fea08a7b17138/anthropic-0.73.0-py3-none-any.whl", hash = "sha256:0d56cd8b3ca3fea9c9b5162868bdfd053fbc189b8b56d4290bd2d427b56db769", size = 367839, upload-time = "2025-11-14T18:47:51.195Z" },
+]
+
+[[package]]
 name = "anyio"
 version = "4.12.1"
 source = { registry = "https://pypi.org/simple" }
@@ -468,6 +487,11 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/3a/31/03917208cc259081c59bff6d11bad847fa215288e283100919527857b897/crewai-1.10.1.tar.gz", hash = "sha256:d118704bf3e56c36282738ba1c5247e4fb4e1ea8799b6e012b3e42b8d25c3657", size = 6805586, upload-time = "2026-03-04T19:10:27.221Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/71/fb/5a9b24ae6cb5253084603244ab0a2f3c00f7a0452717419dbf133df5b24e/crewai-1.10.1-py3-none-any.whl", hash = "sha256:d8315af126de01baeb9254ba524c845a0ec906935add59fc77fbbf2a2b5d9a5f", size = 886196, upload-time = "2026-03-04T19:10:25.384Z" },
+]
+
+[package.optional-dependencies]
+anthropic = [
+    { name = "anthropic" },
 ]
 
 [[package]]
@@ -2350,7 +2374,7 @@ name = "pythonproject"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
-    { name = "crewai" },
+    { name = "crewai", extra = ["anthropic"] },
     { name = "crewai-tools" },
     { name = "logfire" },
     { name = "opencv-python" },
@@ -2360,7 +2384,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "crewai", specifier = ">=1.10.1" },
+    { name = "crewai", extras = ["anthropic"], specifier = ">=1.10.1" },
     { name = "crewai-tools", specifier = ">=1.10.1" },
     { name = "logfire", specifier = ">=4.6.0" },
     { name = "opencv-python", specifier = ">=4.13.0.92" },
